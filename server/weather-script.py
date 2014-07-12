@@ -10,39 +10,95 @@ import datetime
 import codecs
 
 
+city = 'Stockholm'
 
 #
 # Download and parse weather data
 #
 
 # Fetch data (change lat and lon to desired location)
-weather_xml = urllib2.urlopen('http://graphical.weather.gov/xml/SOAP_server/ndfdSOAPclientByDay.php?whichClient=NDFDgenByDay&lat=39.3286&lon=-76.6169&format=24+hourly&numDays=4&Unit=m').read()
+weather_xml = urllib2.urlopen('http://api.openweathermap.org/data/2.5/forecast/daily?q=' + city +'&mode=xml&units=metric&cnt=7').read()
 dom = minidom.parseString(weather_xml)
 
-# Parse temperatures
-xml_temperatures = dom.getElementsByTagName('temperature')
+
+# Parse data
+forecast = dom.getElementsByTagName('time')
 highs = [None]*4
 lows = [None]*4
-for item in xml_temperatures:
-    if item.getAttribute('type') == 'maximum':
-        values = item.getElementsByTagName('value')
-        for i in range(len(values)):
-            highs[i] = int(values[i].firstChild.nodeValue)
-    if item.getAttribute('type') == 'minimum':
-        values = item.getElementsByTagName('value')
-        for i in range(len(values)):
-            lows[i] = int(values[i].firstChild.nodeValue)
-
-# Parse icons
-xml_icons = dom.getElementsByTagName('icon-link')
 icons = [None]*4
-for i in range(len(xml_icons)):
-    icons[i] = xml_icons[i].firstChild.nodeValue.split('/')[-1].split('.')[0].rstrip('0123456789')
+for i in range(4):
+    temperature = forecast[i].getElementsByTagName('temperature')
+    highs[i] = int(round(float(temperature[0].getAttribute('max'))))
+    lows[i] = int(round(float(temperature[0].getAttribute('min'))))
+    symbol = forecast[i].getElementsByTagName('symbol')
+    if symbol[0].getAttribute('var') == '01d':
+        #Sun
+        icons[i] = 'skc'
+    elif symbol[0].getAttribute('var') == '02d':
+        icons[i] = 'few' #sun with clouds
+        # few clouds
+        icons[i] = 'sct'
+    elif symbol[0].getAttribute('var') == '03d':
+        #scattered clouds
+        icons[i] = 'bkn'
+    elif symbol[0].getAttribute('var') == '04d':
+        #broken clouds
+        icons[i] = 'ovc'
+    elif symbol[0].getAttribute('var') == '09d':
+        #shower rain
+        icons[i] = 'ra'
+    elif symbol[0].getAttribute('var') == '10d':
+        #rain
+        if symbol[0].getAttribute('number') == '500':
+            icons[i] = 'hi_shwrs'
+        else:
+            icons[i] = 'shra'
+    elif symbol[0].getAttribute('var') == '11d':
+        if symbol[0].getAttribute('number') == '210':
+            #light thunderstorm
+            icons[i] = 'scttsra'
+        else:
+            #thunderstorm
+            icons[i] = 'tsra'
+    elif symbol[0].getAttribute('var') == '13d':
+        if symbol[0].getAttribute('number') == '511':
+            #rain and snow and cold
+            icons[i] = 'mix'
+        else:
+            #snow
+            icons[i] = 'sn'
+    elif symbol[0].getAttribute('var') == '50d':
+        #mist
+        icons[i] = 'fg'
+    else:
+        #blizzard
+        icons[i] = 'blizzard'
+        #blizzard
+        icons[i] = 'cold'
+        #drought
+        icons[i] = 'du'
+        #
+        icons[i] = 'sctfg'
+        #
+        icons[i] = 'fg'
+        #burning
+        icons[i] = 'fu'
+        #rain and cold
+        icons[i] = 'fzra'
+        #hot
+        icons[i] = 'hot'
+        #hail
+        icons[i] = 'ip'
+        #rain and snow
+        icons[i] = 'rasn'
+        #rain and hail
+        icons[i] = 'raip'
+        #wind
+        icons[i] = 'wind'
 
 # Parse dates
-xml_day_one = dom.getElementsByTagName('start-valid-time')[0].firstChild.nodeValue[0:10]
+xml_day_one = dom.getElementsByTagName('time')[0].getAttribute('day')
 day_one = datetime.datetime.strptime(xml_day_one, '%Y-%m-%d')
-
 
 
 #
